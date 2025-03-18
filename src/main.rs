@@ -28,6 +28,13 @@ const GAME_BOARD_LENGTH: usize = BLOCK_GRID_X as usize * BLOCK_GRID_Y as usize;
 const SHAPE_BLOCKS_X: usize = 3;
 const SHAPE_BLOCKS_Y: usize = 3;
 
+
+struct BlockColor {
+    dark: Color,
+    medium: Color,
+    light: Color
+}
+
 #[derive(Clone, Copy)]
 enum BlockType {
     Empty,
@@ -35,12 +42,6 @@ enum BlockType {
     Green,
     Orange,
     UI
-}
-
-struct BlockColor {
-    dark: Color,
-    medium: Color,
-    light: Color
 }
 
 impl BlockType {
@@ -54,7 +55,7 @@ impl BlockType {
         }
     }
 
-    fn get_block_type(n: u32) -> BlockType {
+    fn get_block_type(n: usize) -> BlockType {
         match n {
             1 => BlockType::Blue,
             2 => BlockType::Green,
@@ -65,50 +66,68 @@ impl BlockType {
 }
 
 
-#[derive(Clone)]
 struct TetroShape {
-    shape: [i32; 9]
+    shape: [[bool; 4]; 4]
+}
+
+#[derive(Copy, Clone)]
+enum TetrominoType {
+    T, L, S, O, I
+}
+
+impl TetrominoType {
+    fn get_shape(self) -> TetroShape {
+        match self{
+            TetrominoType::T => TetroShape { shape: [
+                [false, false, false, false],
+                [false, true,  false, false],
+                [true,  true,  true,  false],
+                [false, false, false, false],
+            ] },
+            TetrominoType::L => TetroShape { shape: [
+                [false, true, false, false],
+                [false, true, false, false],
+                [false, true, true, false],
+                [false, false, false, false],
+            ] },
+            TetrominoType::S => TetroShape { shape: [
+                [false, true, false, false],
+                [false, true, true, false],
+                [false, false, true, false],
+                [false, false, false, false],
+            ] },
+            TetrominoType::O => TetroShape { shape: [
+                [false, false, false, false],
+                [false, true, true, false],
+                [false, true, true, false],
+                [false, false, false, false],
+            ] },
+            TetrominoType::I => TetroShape { shape: [
+                [false, true, false, false],
+                [false, true, false, false],
+                [false, true, false, false],
+                [false, true, false, false],
+            ] },
+        }
+    }
+
+    fn get_tetro_type (n: usize) -> TetrominoType{
+        match n {
+            0 => TetrominoType::T,
+            1 => TetrominoType::L,
+            2 => TetrominoType::S,
+            3 => TetrominoType::O,
+            _ => TetrominoType::I,
+        }
+    }
 }
 
 struct Tetromino {
     pos_x: f32,
     pos_y: f32,
-    shape: TetroShape,
-    style: BlockType
+    tetro_type: TetrominoType,
+    tetro_style: BlockType
 }
-
-const TETRO_SHAPES: [TetroShape; 5] = [
-    TetroShape {
-        shape: 
-        [0,0,0,
-        0,1,0,
-        1,1,1]
-    },
-    TetroShape {
-        shape: 
-        [1,0,0,
-        1,1,0,
-        0,1,0]
-    },
-    TetroShape {
-        shape: 
-        [0,1,0,
-        1,1,0,
-        1,0,0]
-    },
-    TetroShape {
-        shape: 
-        [0,0,0,
-        1,1,0,
-        1,1,0]
-    },
-    TetroShape {
-        shape: 
-        [0,1,0,
-        0,1,0,
-        0,1,0]
-    }
-];
 
 
 fn window_conf() -> Conf {
@@ -171,28 +190,27 @@ async fn main() {
 }
 
 fn render_game(tetromino: &Tetromino) {
-    for i in 0..SHAPE_BLOCKS_X * SHAPE_BLOCKS_Y {
-        if tetromino.shape.shape[i] > 0 {
-            let pos_x = tetromino.pos_x + ((i as f32 % SHAPE_BLOCKS_X as f32) * BLOCK_WIDTH);
-            let pos_y = tetromino.pos_y + ((i as i32 / SHAPE_BLOCKS_Y as i32) as f32 * BLOCK_HEIGHT);
-
-            draw_block(pos_x, pos_y, tetromino.style);
+    for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
+        for (x, &block) in row.iter().enumerate() {
+            if block {
+                let pos_x = tetromino.pos_x + (x as f32 * BLOCK_WIDTH);
+                let pos_y = tetromino.pos_y + (y as f32 * BLOCK_HEIGHT);
+                draw_block(pos_x, pos_y, tetromino.tetro_style);
+            }
         }
     }
 }
 
 fn generate_tetromino () -> Tetromino {
     let mut rng = ::rand::rng();
-    let color_id = rng.random::<u32>() % 3;
-    let shape_id = rng.random::<u32>() % 5;
+    let color_id: usize = (rng.random::<u32>() % 3) as usize;
+    let shape_id: usize = (rng.random::<u32>() % 5) as usize;
 
-    
-    
     Tetromino{
         pos_x: BLOCK_WIDTH * 2.0,
         pos_y: UI_HEIGHT,
-        shape: TETRO_SHAPES[shape_id as usize].clone(),
-        style: BlockType::get_block_type(color_id)
+        tetro_type: TetrominoType::get_tetro_type(shape_id),
+        tetro_style: BlockType::get_block_type(color_id)
     }
 }
 
@@ -221,8 +239,6 @@ fn mouse_event(x: f32, y: f32) -> i32 {
 }
 
 fn draw_ui() {
-    let ui_color_id = 4;
-
     for y in 0..WINDOW_BLOCKS_Y {
         draw_block(0.0, y as f32 * BLOCK_HEIGHT, BlockType::UI);
         draw_block(WINDOW_WIDTH as f32 - BLOCK_WIDTH, y as f32 * BLOCK_HEIGHT, BlockType::UI);
