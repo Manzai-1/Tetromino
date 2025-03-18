@@ -5,11 +5,11 @@ use ::rand::prelude::*;
 const GAME_WIDTH: f32 = 300.0;
 const GAME_HEIGHT: f32 = GAME_WIDTH * 2.0;
 
-const BLOCK_GRID_X: f32 = 10.0;
-const BLOCK_GRID_Y: f32 = 20.0;
+const BLOCK_GRID_X: usize = 10;
+const BLOCK_GRID_Y: usize = 20;
 
-const BLOCK_WIDTH: f32 = GAME_WIDTH / BLOCK_GRID_X;
-const BLOCK_HEIGHT: f32 = GAME_HEIGHT / BLOCK_GRID_Y;
+const BLOCK_WIDTH: f32 = GAME_WIDTH / BLOCK_GRID_X as f32;
+const BLOCK_HEIGHT: f32 = GAME_HEIGHT / BLOCK_GRID_Y as f32;
 
 const UI_WIDTH: f32 = BLOCK_WIDTH;
 const UI_HEIGHT: f32 = BLOCK_HEIGHT * 4.0;
@@ -126,6 +126,7 @@ struct Tetromino {
 }
 
 
+
 fn window_conf() -> Conf {
     Conf {
         window_title: "Tetromino".to_owned(),
@@ -141,6 +142,7 @@ async fn main() {
     let mut skipDelay = false;
     let delay = time::Duration::from_millis(500);
     let mut tetromino: Tetromino = generate_tetromino();
+    let mut game_board = [[BlockType::Empty; BLOCK_GRID_X]; BLOCK_GRID_Y];
     //let mut game_board: [i32; GAME_BOARD_LENGTH] = [0; GAME_BOARD_LENGTH]; 
 
     loop {
@@ -175,6 +177,7 @@ async fn main() {
 
         if !skipDelay {
             if detect_collission(&tetromino, 0.0, BLOCK_HEIGHT) {
+                handle_collission(game_board, tetromino);
                 tetromino = generate_tetromino();
             }else {
                 tetromino.pos_y += BLOCK_HEIGHT;
@@ -187,13 +190,22 @@ async fn main() {
         draw_buttons();
         draw_score(50);
         
-        render_game(&tetromino);
+        render_game(&tetromino, game_board);
 
         next_frame().await
     }
 }
 
-fn render_game(tetromino: &Tetromino) {
+fn render_game(tetromino: &Tetromino, game_board: [[BlockType; BLOCK_GRID_X]; BLOCK_GRID_Y]) {
+    for (y, row) in game_board.iter().enumerate() {
+        for (x, &block) in row.iter().enumerate() {
+            let pos_x: f32 = (x as f32 * BLOCK_WIDTH) + UI_WIDTH;
+            let pos_y = (y as f32 * BLOCK_HEIGHT) + UI_HEIGHT;
+
+            draw_block(pos_x, pos_y, block);
+        }
+    }
+    
     for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
         for (x, &block) in row.iter().enumerate() {
             if block {
@@ -211,15 +223,12 @@ fn detect_collission(tetromino: &Tetromino, add_x: f32, add_y: f32) -> bool {
             if block {
                 let block_x = tetromino.pos_x + (x as f32 * BLOCK_WIDTH);
                 let block_y = tetromino.pos_y + (y as f32 * BLOCK_HEIGHT);
-                
                 let new_block_x = block_x + add_x;
                 let new_block_y = block_y + add_y;
 
                 if new_block_x < GAME_WINDOW_X1 || new_block_x >= GAME_WINDOW_X2 {
                     return true;
-                }
-
-                if new_block_y > GAME_WINDOW_Y2{
+                } else if new_block_y > GAME_WINDOW_Y2{
                     return true;
                 }
             }
@@ -227,6 +236,21 @@ fn detect_collission(tetromino: &Tetromino, add_x: f32, add_y: f32) -> bool {
     }
 
     return false;
+}
+
+fn handle_collission(mut game_board: [[BlockType; BLOCK_GRID_X]; BLOCK_GRID_Y], tetromino: Tetromino){
+    for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
+        for (x, &block) in row.iter().enumerate() {
+            if block {
+                // let pos_x = tetromino.pos_x + (x as f32 * BLOCK_WIDTH);
+                // let pos_y = tetromino.pos_y + (y as f32 * BLOCK_HEIGHT);
+                let ind_x: usize = ((tetromino.pos_x - UI_WIDTH) / BLOCK_WIDTH) as usize;
+                let ind_y: usize = ((tetromino.pos_y - UI_HEIGHT) / BLOCK_HEIGHT) as usize;
+
+                game_board[ind_y][ind_x] = tetromino.tetro_style;
+            }
+        }
+    }
 }
 
 fn generate_tetromino () -> Tetromino {
