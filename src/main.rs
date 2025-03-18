@@ -211,8 +211,8 @@ fn render_game(tetromino: &Tetromino, game_board: [[BlockType; GAME_BLOCKS_X]; G
     for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
         for (x, &block) in row.iter().enumerate() {
             if block {
-                let pos_x = (tetromino.pos_x as usize + x + UI_BLOCK_WIDTH) as f32 * BLOCK_WIDTH; //tetromino.pos_x + (x as f32 * BLOCK_WIDTH);
-                let pos_y = (tetromino.pos_y as usize + y + UI_BLOCK_HEIGHT) as f32 * BLOCK_HEIGHT;//tetromino.pos_y + (y as f32 * BLOCK_HEIGHT);
+                let pos_x = (tetromino.pos_x as f32 + (x + UI_BLOCK_WIDTH) as f32) * BLOCK_WIDTH; //tetromino.pos_x + (x as f32 * BLOCK_WIDTH);
+                let pos_y = (tetromino.pos_y as f32 + (y + UI_BLOCK_HEIGHT) as f32) * BLOCK_HEIGHT;//tetromino.pos_y + (y as f32 * BLOCK_HEIGHT);
                 draw_block(pos_x, pos_y, tetromino.tetro_style);
             }
         }
@@ -226,7 +226,7 @@ fn detect_collission(tetromino: &Tetromino, add_x: i32, add_y: i32) -> bool {
                 let new_x = tetromino.pos_x + x as i32 + add_x;
                 let new_y = tetromino.pos_y + y as i32 + add_y;
 
-                if  new_x < 0 as i32 || new_x > (GAME_BLOCKS_X - 1) as i32 {
+                if  new_x < 0  || new_x > (GAME_BLOCKS_X - 1) as i32 {
                     return true;
                 } else if new_y > (GAME_BLOCKS_Y - 1) as i32 {
                     return true;
@@ -246,8 +246,7 @@ fn handle_collission(mut game_board: [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]
                 // let pos_y = tetromino.pos_y + (y as f32 * BLOCK_HEIGHT);
                 //let ind_x: usize = tetromino.pos_x - UI_WIDTH;
                 //let ind_y: usize = ((tetromino.pos_y - UI_HEIGHT) / BLOCK_HEIGHT) as usize;
-
-                //game_board[ind_y][ind_x] = tetromino.tetro_style;
+                game_board[tetromino.pos_y as usize + y][tetromino.pos_x as usize + x] = tetromino.tetro_style;
             }
         }
     }
