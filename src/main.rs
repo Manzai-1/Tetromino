@@ -11,23 +11,19 @@ const BLOCK_GRID_Y: f32 = 20.0;
 const BLOCK_WIDTH: f32 = GAME_WIDTH / BLOCK_GRID_X;
 const BLOCK_HEIGHT: f32 = GAME_HEIGHT / BLOCK_GRID_Y;
 
-const UI_BLOCKS_X: i32 = 2; 
-const UI_BLOCKS_Y: i32 = 2; 
+const UI_WIDTH: f32 = BLOCK_WIDTH;
+const UI_HEIGHT: f32 = BLOCK_HEIGHT * 4.0;
 
-const UI_WIDTH: f32 = BLOCK_WIDTH * UI_BLOCKS_X as f32;
-const UI_HEIGHT: f32 = (BLOCK_HEIGHT * UI_BLOCKS_Y as f32) * 2.0;
-
-const WINDOW_WIDTH: i32 = GAME_WIDTH as i32 + UI_WIDTH as i32;
+const WINDOW_WIDTH: i32 = GAME_WIDTH as i32 + (UI_WIDTH * 2.0) as i32;
 const WINDOW_HEIGHT: i32 = GAME_HEIGHT as i32 + (UI_HEIGHT as i32 * 2);
 
 const WINDOW_BLOCKS_X: i32 = WINDOW_WIDTH / BLOCK_WIDTH as i32;
 const WINDOW_BLOCKS_Y: i32 = WINDOW_HEIGHT / BLOCK_HEIGHT as i32;
 
-const GAME_BOARD_LENGTH: usize = BLOCK_GRID_X as usize * BLOCK_GRID_Y as usize;
-
-const SHAPE_BLOCKS_X: usize = 3;
-const SHAPE_BLOCKS_Y: usize = 3;
-
+const GAME_WINDOW_X1: f32 = UI_WIDTH;
+const GAME_WINDOW_X2: f32 = WINDOW_WIDTH as f32 - UI_WIDTH;
+const GAME_WINDOW_Y1: f32 = UI_HEIGHT;
+const GAME_WINDOW_Y2: f32 = WINDOW_HEIGHT as f32 - UI_HEIGHT;
 
 struct BlockColor {
     dark: Color,
@@ -57,9 +53,9 @@ impl BlockType {
 
     fn get_block_type(n: usize) -> BlockType {
         match n {
-            1 => BlockType::Blue,
-            2 => BlockType::Green,
-            3 => BlockType::Orange,
+            0 => BlockType::Blue,
+            1 => BlockType::Green,
+            2 => BlockType::Orange,
             _ => BlockType::Empty
         }
     }
@@ -160,13 +156,17 @@ async fn main() {
             match btn_id {
                 1 => println!("ROTATE LEFT"),
                 2 => {
-                    tetromino.pos_x -= BLOCK_WIDTH;
-                    skipDelay = true;
+                    if !detect_collission(&tetromino, BLOCK_WIDTH * -1.0, 0.0) {
+                        tetromino.pos_x -= BLOCK_WIDTH;
+                        skipDelay = true;
+                    }
                 },
                 3 => println!("MOVE DOWN"),
                 4 => {
-                    tetromino.pos_x += BLOCK_WIDTH;
-                    skipDelay = true;
+                    if !detect_collission(&tetromino, BLOCK_WIDTH, 0.0) {
+                        tetromino.pos_x += BLOCK_WIDTH;
+                        skipDelay = true;
+                    }
                 },
                 5 => println!("ROTATE RIGHT"),
                 _ => println!("NO BUTTON CLICKED"),
@@ -174,8 +174,12 @@ async fn main() {
         }
 
         if !skipDelay {
-            tetromino.pos_y += BLOCK_HEIGHT;
-            thread::sleep(delay);
+            if detect_collission(&tetromino, 0.0, BLOCK_HEIGHT) {
+                tetromino = generate_tetromino();
+            }else {
+                tetromino.pos_y += BLOCK_HEIGHT;
+                thread::sleep(delay);
+            }
         }
 
         clear_background(BLACK);
@@ -199,6 +203,30 @@ fn render_game(tetromino: &Tetromino) {
             }
         }
     }
+}
+
+fn detect_collission(tetromino: &Tetromino, add_x: f32, add_y: f32) -> bool {
+    for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
+        for (x, &block) in row.iter().enumerate() {
+            if block {
+                let block_x = tetromino.pos_x + (x as f32 * BLOCK_WIDTH);
+                let block_y = tetromino.pos_y + (y as f32 * BLOCK_HEIGHT);
+                
+                let new_block_x = block_x + add_x;
+                let new_block_y = block_y + add_y;
+
+                if new_block_x <= GAME_WINDOW_X1 || new_block_x >= GAME_WINDOW_X2 {
+                    return true;
+                }
+
+                if new_block_y > GAME_WINDOW_Y2{
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 fn generate_tetromino () -> Tetromino {
