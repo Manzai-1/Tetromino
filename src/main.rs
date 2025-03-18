@@ -160,14 +160,14 @@ async fn main() {
             match btn_id {
                 1 => println!("ROTATE LEFT"),
                 2 => {
-                    if !detect_collission(&tetromino, -1, 0) {
+                    if !detect_collission(&tetromino, -1, 0, game_board) {
                         tetromino.pos_x -= 1;
                         skipDelay = true;
                     }
                 },
                 3 => println!("MOVE DOWN"),
                 4 => {
-                    if !detect_collission(&tetromino, 1, 0) {
+                    if !detect_collission(&tetromino, 1, 0, game_board) {
                         tetromino.pos_x += 1;
                         skipDelay = true;
                     }
@@ -178,7 +178,7 @@ async fn main() {
         }
 
         if !skipDelay {
-            if detect_collission(&tetromino, 0, 1) {
+            if detect_collission(&tetromino, 0, 1, game_board) {
                 game_board = handle_collission(game_board, tetromino);
                 tetromino = generate_tetromino();
             }else {
@@ -219,7 +219,7 @@ fn render_game(tetromino: &Tetromino, game_board: [[BlockType; GAME_BLOCKS_X]; G
     }
 }
 
-fn detect_collission(tetromino: &Tetromino, add_x: i32, add_y: i32) -> bool {
+fn detect_collission(tetromino: &Tetromino, add_x: i32, add_y: i32, game_board: [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]) -> bool {
     for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
         for (x, &block) in row.iter().enumerate() {
             if block {
@@ -229,6 +229,8 @@ fn detect_collission(tetromino: &Tetromino, add_x: i32, add_y: i32) -> bool {
                 if  new_x < 0  || new_x > (GAME_BLOCKS_X - 1) as i32 {
                     return true;
                 } else if new_y > (GAME_BLOCKS_Y - 1) as i32 {
+                    return true;
+                } else if !matches!(game_board[new_y as usize][new_x as usize], BlockType::Empty) {
                     return true;
                 }
             }
