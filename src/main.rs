@@ -28,39 +28,42 @@ const GAME_BOARD_LENGTH: usize = BLOCK_GRID_X as usize * BLOCK_GRID_Y as usize;
 const SHAPE_BLOCKS_X: usize = 3;
 const SHAPE_BLOCKS_Y: usize = 3;
 
+#[derive(Clone, Copy)]
+enum BlockType {
+    Empty,
+    Blue,
+    Green,
+    Orange,
+    UI
+}
+
 struct BlockColor {
     dark: Color,
     medium: Color,
     light: Color
 }
 
-const BLOCK_COLORS: [BlockColor; 5] = [
-    BlockColor{
-        dark: BLACK,
-        medium: BLACK,
-        light: BLACK
-    },
-    BlockColor{
-        dark: DARKBLUE,
-        medium: BLUE,
-        light: SKYBLUE
-    },
-    BlockColor{
-        dark: DARKGREEN,
-        medium: LIME,
-        light: GREEN
-    },
-    BlockColor{
-        dark: ORANGE,
-        medium: GOLD,
-        light: YELLOW
-    },
-    BlockColor{
-        dark: DARKBLUE,
-        medium: PURPLE,
-        light: PINK
+impl BlockType {
+    fn get_color(self) -> BlockColor {
+        match self {
+            BlockType::Empty => BlockColor { dark: BLACK, medium: BLACK, light: BLACK },
+            BlockType::Blue  => BlockColor { dark: DARKBLUE, medium: BLUE, light: SKYBLUE },
+            BlockType::Green => BlockColor { dark: DARKGREEN, medium: LIME, light: GREEN },
+            BlockType::Orange => BlockColor { dark: ORANGE, medium: GOLD, light: YELLOW },
+            BlockType::UI => BlockColor { dark: DARKBLUE, medium: PURPLE, light: PINK },
+        }
     }
-];
+
+    fn get_block_type(n: u32) -> BlockType {
+        match n {
+            1 => BlockType::Blue,
+            2 => BlockType::Green,
+            3 => BlockType::Orange,
+            _ => BlockType::Empty
+        }
+    }
+}
+
 
 #[derive(Clone)]
 struct TetroShape {
@@ -71,7 +74,7 @@ struct Tetromino {
     pos_x: f32,
     pos_y: f32,
     shape: TetroShape,
-    color_id: usize
+    style: BlockType
 }
 
 const TETRO_SHAPES: [TetroShape; 5] = [
@@ -173,7 +176,7 @@ fn render_game(tetromino: &Tetromino) {
             let pos_x = tetromino.pos_x + ((i as f32 % SHAPE_BLOCKS_X as f32) * BLOCK_WIDTH);
             let pos_y = tetromino.pos_y + ((i as i32 / SHAPE_BLOCKS_Y as i32) as f32 * BLOCK_HEIGHT);
 
-            draw_block(pos_x, pos_y, tetromino.color_id);
+            draw_block(pos_x, pos_y, tetromino.style);
         }
     }
 }
@@ -183,14 +186,13 @@ fn generate_tetromino () -> Tetromino {
     let color_id = rng.random::<u32>() % 3;
     let shape_id = rng.random::<u32>() % 5;
 
-    println!("COLOR_ID: {}", color_id);
-    println!("SHAPE_ID: {}", shape_id);
+    
     
     Tetromino{
         pos_x: BLOCK_WIDTH * 2.0,
         pos_y: UI_HEIGHT,
         shape: TETRO_SHAPES[shape_id as usize].clone(),
-        color_id: (color_id + 1) as usize
+        style: BlockType::get_block_type(color_id)
     }
 }
 
@@ -222,16 +224,16 @@ fn draw_ui() {
     let ui_color_id = 4;
 
     for y in 0..WINDOW_BLOCKS_Y {
-        draw_block(0.0, y as f32 * BLOCK_HEIGHT, ui_color_id);
-        draw_block(WINDOW_WIDTH as f32 - BLOCK_WIDTH, y as f32 * BLOCK_HEIGHT, ui_color_id);
+        draw_block(0.0, y as f32 * BLOCK_HEIGHT, BlockType::UI);
+        draw_block(WINDOW_WIDTH as f32 - BLOCK_WIDTH, y as f32 * BLOCK_HEIGHT, BlockType::UI);
     }
 
     for n in 1..WINDOW_BLOCKS_X -1{
         let pos_x: f32 = n as f32 * BLOCK_WIDTH;
-        draw_block(pos_x, 0.0, ui_color_id);
-        draw_block(pos_x, WINDOW_HEIGHT as f32 - BLOCK_HEIGHT, ui_color_id);
-        draw_block(pos_x, UI_HEIGHT - BLOCK_HEIGHT, ui_color_id);
-        draw_block(pos_x, WINDOW_HEIGHT as f32 - UI_HEIGHT, ui_color_id);
+        draw_block(pos_x, 0.0, BlockType::UI);
+        draw_block(pos_x, WINDOW_HEIGHT as f32 - BLOCK_HEIGHT, BlockType::UI);
+        draw_block(pos_x, UI_HEIGHT - BLOCK_HEIGHT, BlockType::UI);
+        draw_block(pos_x, WINDOW_HEIGHT as f32 - UI_HEIGHT, BlockType::UI);
     }
 }
 
@@ -258,10 +260,10 @@ fn draw_score(score: i32) {
 }
     
 
-fn draw_block(pos_x:f32, pos_y:f32, col_id: usize) {
-    draw_rectangle(pos_x +2.0, pos_y +2.0, BLOCK_WIDTH - 4.0, BLOCK_HEIGHT - 4.0, BLOCK_COLORS[col_id].dark);
-    draw_rectangle(pos_x +6.0, pos_y +6.0, BLOCK_WIDTH - 12.0, BLOCK_HEIGHT - 12.0, BLOCK_COLORS[col_id].medium);
-    draw_rectangle(pos_x +12.0, pos_y +12.0, BLOCK_WIDTH - 24.0, BLOCK_HEIGHT - 24.0, BLOCK_COLORS[col_id].light);
+fn draw_block(pos_x:f32, pos_y:f32, style: BlockType) {
+    draw_rectangle(pos_x +2.0, pos_y +2.0, BLOCK_WIDTH - 4.0, BLOCK_HEIGHT - 4.0, BlockType::get_color(style).dark);
+    draw_rectangle(pos_x +6.0, pos_y +6.0, BLOCK_WIDTH - 12.0, BLOCK_HEIGHT - 12.0, BlockType::get_color(style).medium);
+    draw_rectangle(pos_x +12.0, pos_y +12.0, BLOCK_WIDTH - 24.0, BLOCK_HEIGHT - 24.0, BlockType::get_color(style).light);
 }
 
 fn draw_button(pos_x:f32, pos_y:f32, text: &str){
