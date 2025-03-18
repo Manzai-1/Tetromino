@@ -215,7 +215,7 @@ fn detect_collission(tetromino: &Tetromino, add_x: f32, add_y: f32) -> bool {
                 let new_block_x = block_x + add_x;
                 let new_block_y = block_y + add_y;
 
-                if new_block_x <= GAME_WINDOW_X1 || new_block_x >= GAME_WINDOW_X2 {
+                if new_block_x < GAME_WINDOW_X1 || new_block_x >= GAME_WINDOW_X2 {
                     return true;
                 }
 
@@ -244,7 +244,7 @@ fn generate_tetromino () -> Tetromino {
 
 fn mouse_event(x: f32, y: f32) -> i32 {
 
-    let btn_range_y1 = WINDOW_HEIGHT as f32 - (UI_HEIGHT * 1.5);
+    let btn_range_y1 = WINDOW_HEIGHT as f32 - (UI_HEIGHT);
     let btn_range_y2 = WINDOW_HEIGHT as f32 - (BLOCK_HEIGHT);
 
     if y > btn_range_y1 && y < btn_range_y2 {
@@ -283,7 +283,7 @@ fn draw_ui() {
 
 fn draw_buttons() {
     let btn_pos_y: f32 = WINDOW_HEIGHT as f32 - (UI_HEIGHT - BLOCK_HEIGHT);
-    let btn_pos_x: f32 = UI_WIDTH / 2.0;
+    let btn_pos_x: f32 = UI_WIDTH;
 
     draw_button(btn_pos_x, btn_pos_y, "-180");
     draw_button(btn_pos_x + (BLOCK_WIDTH * 2.0), btn_pos_y, "<--");
