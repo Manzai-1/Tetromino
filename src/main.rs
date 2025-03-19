@@ -120,7 +120,7 @@ impl TetrominoType {
 struct Tetromino {
     pos_x: i32,
     pos_y: i32,
-    tetro_type: TetrominoType,
+    tetro_type: TetroShape,
     tetro_style: BlockType
 }
 
@@ -154,7 +154,9 @@ async fn main() {
             let btn_id = mouse_event(mouse_x, mouse_y);
             
             match btn_id {
-                1 => println!("ROTATE LEFT"),
+                1 => {
+                    tetromino.tetro_type = rotate_tetromino(tetromino.tetro_type, -1);
+                },
                 2 => {
                     if !detect_collission(&tetromino, -1, 0, game_board) {
                         tetromino.pos_x -= 1;
@@ -168,7 +170,9 @@ async fn main() {
                         skipDelay = true;
                     }
                 },
-                5 => println!("ROTATE RIGHT"),
+                5 => {
+                    tetromino.tetro_type = rotate_tetromino(tetromino.tetro_type, 1);
+                },
                 _ => println!("NO BUTTON CLICKED"),
             }
         }
@@ -204,7 +208,7 @@ fn render_game(tetromino: &Tetromino, game_board: [[BlockType; GAME_BLOCKS_X]; G
         }
     }
     
-    for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
+    for (y, row) in tetromino.tetro_type.shape.iter().enumerate() {
         for (x, &block) in row.iter().enumerate() {
             if block {
                 let pos_x = (tetromino.pos_x as f32 + (x + UI_BLOCK_WIDTH) as f32) * BLOCK_WIDTH; //tetromino.pos_x + (x as f32 * BLOCK_WIDTH);
@@ -216,7 +220,7 @@ fn render_game(tetromino: &Tetromino, game_board: [[BlockType; GAME_BLOCKS_X]; G
 }
 
 fn detect_collission(tetromino: &Tetromino, add_x: i32, add_y: i32, game_board: [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]) -> bool {
-    for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
+    for (y, row) in tetromino.tetro_type.shape.iter().enumerate() {
         for (x, &block) in row.iter().enumerate() {
             if block {
                 let new_x = tetromino.pos_x + x as i32 + add_x;
@@ -237,7 +241,7 @@ fn detect_collission(tetromino: &Tetromino, add_x: i32, add_y: i32, game_board: 
 }
 
 fn handle_collission(mut game_board: [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y], tetromino: Tetromino) -> [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]{
-    for (y, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
+    for (y, row) in tetromino.tetro_type.shape.iter().enumerate() {
         for (x, &block) in row.iter().enumerate() {
             if block {
                 game_board[(tetromino.pos_y + y as i32) as usize][(tetromino.pos_x + x as i32) as usize] = tetromino.tetro_style;
@@ -253,31 +257,30 @@ fn generate_tetromino () -> Tetromino {
     let color_id: usize = (rng.random::<u32>() % 3) as usize;
     let shape_id: usize = (rng.random::<u32>() % 5) as usize;
     let pos_x: i32 = (rng.random::<u32>() % (GAME_BLOCKS_X - 4) as u32) as i32;
+    let tetro_shape: TetroShape = TetrominoType::get_shape(TetrominoType::get_tetro_type(shape_id));
 
     Tetromino{
         pos_x: pos_x,
         pos_y: 0,
-        tetro_type: TetrominoType::get_tetro_type(shape_id),
+        tetro_type: tetro_shape,
         tetro_style: BlockType::get_block_type(color_id)
     }
 }
 
-fn rotate_tetromino (mut tetromino: Tetromino, direction: i32) -> Tetromino {
+fn rotate_tetromino (tetro_shape: TetroShape, direction: i32) -> TetroShape {
     let mut new_shape = TetroShape{shape: [[false; 4]; 4]};
-
-    let mut ind: i32 = 0;
-    if direction == -1 {ind = 3}
-
-    for (_, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
-        new_shape.shape[0][ind as usize] = row[0];
-        new_shape.shape[1][ind as usize] = row[1];
-        new_shape.shape[2][ind as usize] = row[2];
-        new_shape.shape[3][ind as usize] = row[3];
-
-        ind += direction;
+    
+    for y in 0..4 {
+        for x in 0..4 {
+            if direction == 1 {
+                new_shape.shape[x][3 - y] = tetro_shape.shape[y][x];
+            } else {
+                new_shape.shape[3 - x][y] = tetro_shape.shape[y][x];
+            }
+        }
     }
     
-    tetromino
+    new_shape
 }
 
 fn mouse_event(x: f32, y: f32) -> i32 {
