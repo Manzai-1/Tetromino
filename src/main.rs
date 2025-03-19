@@ -31,7 +31,7 @@ struct BlockColor {
     light: Color
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 enum BlockType {
     Empty,
     Blue,
@@ -44,10 +44,10 @@ impl BlockType {
     fn get_color(self) -> BlockColor {
         match self {
             BlockType::Empty => BlockColor { dark: BLACK, medium: BLACK, light: BLACK },
-            BlockType::Blue  => BlockColor { dark: DARKBLUE, medium: BLUE, light: SKYBLUE },
+            BlockType::Blue  => BlockColor { dark: MAROON, medium: RED, light: PINK },
             BlockType::Green => BlockColor { dark: DARKGREEN, medium: LIME, light: GREEN },
             BlockType::Orange => BlockColor { dark: ORANGE, medium: GOLD, light: YELLOW },
-            BlockType::UI => BlockColor { dark: DARKBLUE, medium: PURPLE, light: PINK },
+            BlockType::UI => BlockColor { dark: DARKBLUE, medium: BLUE, light: SKYBLUE },
         }
     }
 
@@ -206,6 +206,27 @@ async fn main() {
 }
 
 
+fn check_game_board(game_board: &mut [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]) -> i32{
+    let mut y = GAME_BLOCKS_Y -1;
+    let mut points = 0;
+
+    while y > 0{
+        if !game_board[y].contains(&BlockType::Empty){
+            points += 10;
+            for y2 in (0..y+1).rev() {
+                if y2 > 0 {
+                    game_board[y2] = game_board[y2-1];
+                }
+            }
+        }else {
+            y = y -1;
+        }
+    }
+
+    points
+}
+
+
 fn tetromino_action (
     mut tetromino: Tetromino, 
     action: TetrominoAction, 
@@ -255,6 +276,7 @@ fn tetromino_action (
                 game_board
             ){
                 handle_collission(game_board, tetromino);
+                check_game_board(game_board);
                 tetromino = generate_tetromino();
             }else {
                 tetromino.pos_y += action.get_value();
@@ -434,7 +456,7 @@ fn draw_button(pos_x:f32, pos_y:f32, text: &str){
 
     let text_pos_y = WINDOW_HEIGHT as f32 - (UI_HEIGHT / 2.0) + (BLOCK_WIDTH * 0.2);
     
-    draw_rectangle(pos_x +2.0, pos_y +2.0, button_width - 4.0, button_height - 4.0, DARKGRAY);
-    draw_rectangle(pos_x +6.0, pos_y +6.0, button_width - 12.0, button_height - 12.0, GRAY);
+    draw_rectangle(pos_x +2.0, pos_y +2.0, button_width - 4.0, button_height - 4.0, DARKGREEN);
+    draw_rectangle(pos_x +6.0, pos_y +6.0, button_width - 12.0, button_height - 12.0, GREEN);
     draw_text(&text, pos_x + (BLOCK_WIDTH * 0.2), text_pos_y, BLOCK_HEIGHT * 0.9, BLACK);
 }
