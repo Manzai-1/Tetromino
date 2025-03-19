@@ -166,7 +166,12 @@ async fn main() {
     let mut loop_index = 0;
 
     let mut tetromino: Tetromino = generate_tetromino();
-    let mut game_board = [[BlockType::Empty; GAME_BLOCKS_X]; GAME_BLOCKS_Y];
+
+    let mut game_board: GameBoard = GameBoard{
+        board: [[BlockType::Empty; GAME_BLOCKS_X]; GAME_BLOCKS_Y],
+        score: 0,
+        running: true
+    };
 
     loop {
 
@@ -203,25 +208,25 @@ async fn main() {
 
         draw_ui();
         draw_buttons();
-        draw_score(50);
+        draw_score(game_board.score);
         
-        render_game(&tetromino, game_board);
+        render_game(&tetromino, game_board.board);
 
         next_frame().await
     }
 }
 
 
-fn check_game_board(game_board: &mut [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]) -> i32{
+fn check_game_board(game_board: &mut GameBoard){
     let mut y = GAME_BLOCKS_Y -1;
     let mut points = 0;
 
     while y > 0{
-        if !game_board[y].contains(&BlockType::Empty){
+        if !game_board.board[y].contains(&BlockType::Empty){
             points += 10;
             for y2 in (0..y+1).rev() {
                 if y2 > 0 {
-                    game_board[y2] = game_board[y2-1];
+                    game_board.board[y2] = game_board.board[y2-1];
                 }
             }
         }else {
@@ -229,14 +234,14 @@ fn check_game_board(game_board: &mut [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]
         }
     }
 
-    points
+    game_board.score += points;
 }
 
 
 fn tetromino_action (
     mut tetromino: Tetromino, 
     action: TetrominoAction, 
-    game_board: &mut [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]
+    game_board: &mut GameBoard
 ) -> Tetromino {
     match action {
         TetrominoAction::RotateLeft | TetrominoAction::RotateRight=> {
@@ -250,7 +255,7 @@ fn tetromino_action (
                 tetromino.pos_y, 
                 0, 
                 0, 
-                game_board
+                &mut game_board.board
             ){
                 println!("CANT PERFORM ROTATION")
             }else {
@@ -265,7 +270,7 @@ fn tetromino_action (
                 tetromino.pos_y, 
                 action.get_value(), 
                 0, 
-                game_board
+                &mut game_board.board
             ){
                 println!("CANT PERFORM MOVE")
             }else {
@@ -279,9 +284,9 @@ fn tetromino_action (
                 tetromino.pos_y, 
                 0, 
                 action.get_value(), 
-                game_board
+                &mut game_board.board
             ){
-                handle_collission(game_board, tetromino);
+                handle_collission(&mut game_board.board, tetromino);
                 check_game_board(game_board);
                 tetromino = generate_tetromino();
             }else {
@@ -341,13 +346,6 @@ fn handle_collission(game_board:&mut [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y]
         }
     }
 }
-
-
-
-
-
-
-
 
 
 
