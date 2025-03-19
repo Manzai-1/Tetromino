@@ -142,6 +142,12 @@ impl TetrominoAction {
     }
 }
 
+struct GameBoard {
+    board: [[BlockType; GAME_BLOCKS_X]; GAME_BLOCKS_Y],
+    score: i32,
+    running: bool
+}
+
 
 
 fn window_conf() -> Conf {
