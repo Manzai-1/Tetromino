@@ -1,4 +1,4 @@
-use macroquad::{color, prelude::*};
+use macroquad::prelude::*;
 use std::{thread, time};
 use ::rand::prelude::*;
 
@@ -16,9 +16,6 @@ const UI_BLOCK_HEIGHT: usize = 4;
 
 const UI_WIDTH: f32 = BLOCK_WIDTH * UI_BLOCK_WIDTH as f32;
 const UI_HEIGHT: f32 = BLOCK_HEIGHT * UI_BLOCK_HEIGHT as f32;
-
-const GAME_WINDOW_X1: f32 = UI_WIDTH;
-const GAME_WINDOW_Y1: f32 = UI_HEIGHT;
 
 const WINDOW_WIDTH: i32 = GAME_WIDTH as i32 + (UI_WIDTH * 2.0) as i32;
 const WINDOW_HEIGHT: i32 = GAME_HEIGHT as i32 + (UI_HEIGHT as i32 * 2);
@@ -145,7 +142,6 @@ async fn main() {
     let delay = time::Duration::from_millis(500);
     let mut tetromino: Tetromino = generate_tetromino();
     let mut game_board = [[BlockType::Empty; GAME_BLOCKS_X]; GAME_BLOCKS_Y];
-    //let mut game_board: [i32; GAME_BOARD_LENGTH] = [0; GAME_BOARD_LENGTH]; 
 
     loop {
         if skipDelay {
@@ -264,6 +260,24 @@ fn generate_tetromino () -> Tetromino {
         tetro_type: TetrominoType::get_tetro_type(shape_id),
         tetro_style: BlockType::get_block_type(color_id)
     }
+}
+
+fn rotate_tetromino (mut tetromino: Tetromino, direction: i32) -> Tetromino {
+    let mut new_shape = TetroShape{shape: [[false; 4]; 4]};
+
+    let mut ind: i32 = 0;
+    if direction == -1 {ind = 3}
+
+    for (_, row) in tetromino.tetro_type.get_shape().shape.iter().enumerate() {
+        new_shape.shape[0][ind as usize] = row[0];
+        new_shape.shape[1][ind as usize] = row[1];
+        new_shape.shape[2][ind as usize] = row[2];
+        new_shape.shape[3][ind as usize] = row[3];
+
+        ind += direction;
+    }
+    
+    tetromino
 }
 
 fn mouse_event(x: f32, y: f32) -> i32 {
